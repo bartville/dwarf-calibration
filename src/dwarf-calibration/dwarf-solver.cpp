@@ -69,10 +69,15 @@ namespace dwarf_calibration {
 
   void DwarfSolver::updateSolution(const Vector6f& delta){
     _T = _T * v2t(delta); //check this
+    //std::cerr << "T: " << t2v(_T).transpose() << std::endl;
   }
     
   void DwarfSolver::solve(){
-    std::cerr << "[DwarfSolver]: dwarf solve!" << std::endl;
+    if(_dataset && _dataset_size)
+      std::cerr << "[DwarfSolver]: dwarf solve!" << std::endl;
+    else
+      throw std::runtime_error("[DwarfSolver]: this Dwarf is angry! Where are my data!?!?");
+    
     for(size_t i=0; i<_iterations; ++i){
       linearize();
       std::cerr << "chi2: " << _chi2/_dataset_size << std::endl;
