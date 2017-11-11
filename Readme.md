@@ -24,4 +24,4 @@ To test the dwarf solver is not drunk, run the example app
 cd bin
 ./dwarf-calibration-app
 ~~~~
-A dwarf factory will generate a fake dataset and, starting from an Identity initial guess, a dwarf solver will find the correct transform.
+A dwarf factory will generate a fake dataset and, starting from an Identity initial guess, a dwarf solver will find the correct transform. If the **Dwarf Solution** is near the **Actual Solution**, drink to the Dwarf-calibrator
