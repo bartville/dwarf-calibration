@@ -2,6 +2,8 @@
 
 namespace dwarf_calibration {
 
+  //!constructor
+  //!
   DwarfSolver::DwarfSolver(){
     _T.setIdentity();
     _dataset = 0;
@@ -15,6 +17,12 @@ namespace dwarf_calibration {
     
   }
 
+  //!compute the error function for our 3d calibration problem
+  //!@param guess: a guess isometry
+  //!@param reference: reference, i.e. a sample of the relative trajectory #1 
+  //!@param measure: measure, i.e. a sample of the relative trajectory #2 
+  //!@returns the error computed as a Vector6
+  //!
   Vector6f DwarfSolver::computeError(const Eigen::Isometry3f& guess,
 				     const Sample& reference,
 				     const Sample& measure) {
@@ -23,6 +31,13 @@ namespace dwarf_calibration {
     return t2v(error_iso);   
   }
 
+  //!compute the error function applying an epsilon noise to the guess
+  //!@param id: id of the coordinate to apply the noise
+  //!@param epsilon: noise amount, its sign may vary, since the noise may be positive or negative
+  //!@param reference: reference, i.e. a sample of the relative trajectory #1 
+  //!@param measure: measure, i.e. a sample of the relative trajectory #2 
+  //!@returns the error computed as a Vector6
+  //!
   Vector6f DwarfSolver::computeDisturbedError(const int id,
 					      const float& epsilon,
 					      const Sample& reference,
@@ -35,7 +50,9 @@ namespace dwarf_calibration {
     return computeError(guess, reference, measure);    
   }
   
-  
+
+  //!performs one step of gauss-newton(levemberg-marqardt) algorithm
+  //!
   void DwarfSolver::linearize(){
     _H.setZero();
     _b.setZero();
@@ -66,12 +83,16 @@ namespace dwarf_calibration {
     }    
   }
 
-
+  //!update the solution, by applying a delta correction
+  //!@params delta: delta solution of the levemberg-marqardt algorithm 
+  //!
   void DwarfSolver::updateSolution(const Vector6f& delta){
     _T = _T * v2t(delta); //check this
     //std::cerr << "T: " << t2v(_T).transpose() << std::endl;
   }
-    
+
+  //!performs N iterations of L-M algorithm, updating the solution
+  //!  
   void DwarfSolver::solve(){
     if(_dataset && _dataset_size)
       std::cerr << "[DwarfSolver]: dwarf solve!" << std::endl;

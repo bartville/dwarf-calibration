@@ -2,11 +2,11 @@
 
 using namespace dwarf_calibration;
 
-
+/* This function generates a fake relative 3d isometry */
 Eigen::Isometry3f randomRelativeIso() {
   const float tmin = 0.02;
   const float tmax = 0.1;
-  float x = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/tmax));
+  float x  =  static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/tmax));
   float y  =  static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/tmax));
   float z  =  static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/tmax));
   float rx =  static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/tmax));
@@ -23,8 +23,26 @@ Eigen::Isometry3f randomRelativeIso() {
   return rand_iso;
 }
 
+/* This function applies a bit of noise to a 3d isometry */
+void applySomeNoise(Eigen::Isometry3f& T) {
+  const float max_noise = 0.005;
+  T.translation().x() += static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/max_noise));
+  T.translation().y() += static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/max_noise));
+  T.translation().z() += static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/max_noise));
+  Eigen::Matrix3f m;
+  m = Eigen::AngleAxisf(static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/max_noise)), Eigen::Vector3f::UnitX())
+    * Eigen::AngleAxisf(static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/max_noise)), Eigen::Vector3f::UnitY())
+    * Eigen::AngleAxisf(static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/max_noise)), Eigen::Vector3f::UnitZ());
+  T.linear() *= m;
+}
+
 int main(int argv, char** argc){
-  // create a fake dataset
+  
+  /* Part 1: DATASET GENERATION
+   * In this example we generate a fake dataset,
+   * applying some random noise to random
+   * relative measurements.
+   */
   SamplePairVector dataset;
   Eigen::Isometry3f T;
   Eigen::Matrix3f m;
@@ -40,15 +58,22 @@ int main(int argv, char** argc){
   for(int i=0; i < data_size; ++i) {
     Sample ref, curr;
     ref._T = randomRelativeIso();
-    //std::cerr << "sample: " << t2v(ref._T).transpose() << std::endl;
     curr._T = T.inverse()*ref._T*T;
+    //add some noise to the dataset
+    applySomeNoise(curr._T);
     SamplePair data_sample;
     data_sample.first = ref;
     data_sample.second = curr;
     dataset[i] = data_sample;    
   }
   std::cerr << "[Random Dataset Generated]!" << std::endl;
-  // instantiate a solver
+
+  /* Part 2: DWARF-SOLVER initialization
+   * a dwarf solver needs:
+   * - a dataset
+   * - an initial guess
+   * - a maximum number of iteration
+   */
   DwarfSolver solver;
 
   solver.setDataset(&dataset);
@@ -60,7 +85,13 @@ int main(int argv, char** argc){
 
   const int iterations = 30;
   solver.setIterations(iterations);
-  
+
+  /* Part 3: get drunk with a DWARF
+   * call the solve() methods and
+   * get the output. Check if it is consistent
+   * with the actual solution (we used to generate
+   * the fake dataset).
+   */
   solver.solve();
   
   Eigen::Isometry3f solution = solver.T();
